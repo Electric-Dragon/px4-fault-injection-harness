@@ -1,0 +1,42 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "dev",
+            "binaryDir": "${sourceDir}/build",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "HARNESS_BUILD_TESTS": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "binaryDir": "${sourceDir}/build-release",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "HARNESS_BUILD_TESTS": "OFF"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "dev",
+            "configurePreset": "dev"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "dev",
+            "configurePreset": "dev",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
+}

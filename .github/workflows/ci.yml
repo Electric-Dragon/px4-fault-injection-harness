@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          MAVSDK_VERSION=3.17.1
+          sudo apt-get update
+          sudo apt-get install -y ninja-build wget
+          wget -q "https://github.com/mavlink/MAVSDK/releases/download/v${MAVSDK_VERSION}/libmavsdk-dev_${MAVSDK_VERSION}_ubuntu24.04_amd64.deb"
+          sudo apt-get install -y "./libmavsdk-dev_${MAVSDK_VERSION}_ubuntu24.04_amd64.deb"
+
+      - name: Configure
+        run: cmake --preset dev
+
+      - name: Build
+        run: cmake --build --preset dev
+
+      - name: Test
+        run: ctest --preset dev
