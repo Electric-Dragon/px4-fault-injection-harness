@@ -21,8 +21,8 @@ public:
         return r;
     }
 
-    bool ok() const { return value_.has_value(); }
-    explicit operator bool() const { return ok(); }
+    bool has_value() const { return value_.has_value(); }
+    explicit operator bool() const { return has_value(); }
 
     const T& value() const { return value_.value(); }
     const std::string& error() const { return error_; }
@@ -43,8 +43,8 @@ public:
         return r;
     }
 
-    bool ok() const { return error_.empty(); }
-    explicit operator bool() const { return ok(); }
+    bool has_value() const { return error_.empty(); }
+    explicit operator bool() const { return has_value(); }
 
     const std::string& error() const { return error_; }
 

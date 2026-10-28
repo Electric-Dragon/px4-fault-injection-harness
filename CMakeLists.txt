@@ -12,17 +12,18 @@ include(cmake/warnings.cmake)
 include(cmake/dependencies.cmake)
 include(cmake/mavsdk.cmake)
 
-add_library(harness_lib INTERFACE)
-target_include_directories(harness_lib INTERFACE
+add_library(harness_lib STATIC "src/vehicle/connection_url.cpp")
+target_include_directories(harness_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-target_link_libraries(harness_lib INTERFACE
+target_link_libraries(harness_lib PUBLIC
     spdlog::spdlog
     nlohmann_json::nlohmann_json
     yaml-cpp::yaml-cpp
     CLI11::CLI11
     MAVSDK::mavsdk
 )
+target_link_libraries(harness_lib PRIVATE harness_warnings)
 
 add_executable(harness src/main.cpp)
 target_link_libraries(harness PRIVATE harness_lib harness_warnings)
