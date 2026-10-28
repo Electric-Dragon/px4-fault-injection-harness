@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
     auto* run_cmd = app.add_subcommand("run", "Run fault-injection test specs");
     run_cmd->add_option("--url", url, "MAVLink connection URL");
-    run_cmd->add_option("--specs", specs_dir, "Directory containing test specs")->required();
+    run_cmd->add_option("--specs", specs_dir, "Directory containing test specs"); //->required();
     run_cmd->add_option("--out", out_dir, "Output directory for reports");
     run_cmd->add_option("--filter", filter, "Glob filter for spec IDs");
 
