@@ -14,6 +14,7 @@ target_compile_options(harness_warnings INTERFACE
     -Wsign-conversion
     -Wnull-dereference
     -Wformat=2
+    -Wimplicit-fallthrough
 )
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

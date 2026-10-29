@@ -7,8 +7,16 @@
 #include <mavsdk/plugins/telemetry/telemetry.h>
 #include <chrono>
 #include <thread>
-
+#include <atomic>
+#include <csignal>
 #include "harness/vehicle/vehicle_class.hpp"
+
+namespace {
+    std::atomic<bool> killed{false};
+    void signal_handler(int) {
+        killed = true;
+    }
+}
 
 using namespace std::chrono;
 int main(int argc, char** argv) {
@@ -38,6 +46,7 @@ int main(int argc, char** argv) {
     CLI11_PARSE(app, argc, argv);
 
     if (run_cmd->parsed()) {
+
         spdlog::info("run: specs={} url={} out={}", specs_dir, url, out_dir);
 
         if (auto url_validation_result = harness::validate_connection_url(url); !url_validation_result) {
@@ -110,6 +119,38 @@ int main(int argc, char** argv) {
         auto flight_mode = telemetry.flight_mode();
 
         spdlog::info("Flight mode: {}", fmt::streamed(flight_mode));
+
+        auto telemetry_status_text_listener = telemetry.subscribe_status_text([](const mavsdk::Telemetry::StatusText& status_text) {
+            switch (status_text.type) {
+                case mavsdk::Telemetry::StatusTextType::Alert:
+                case mavsdk::Telemetry::StatusTextType::Emergency:
+                case mavsdk::Telemetry::StatusTextType::Critical:
+                case mavsdk::Telemetry::StatusTextType::Error:
+                    spdlog::error("PX4: {}", status_text.text);
+                    break;
+                case mavsdk::Telemetry::StatusTextType::Debug:
+                    spdlog::debug("PX4: {}", status_text.text);
+                    break;
+                case mavsdk::Telemetry::StatusTextType::Info:
+                case mavsdk::Telemetry::StatusTextType::Notice:
+                    spdlog::info("PX4: {}", status_text.text);
+                    break;
+                case mavsdk::Telemetry::StatusTextType::Warning:
+                    spdlog::warn("PX4: {}", status_text.text);
+                    break;
+            }
+        });
+
+        std::signal(SIGINT, signal_handler);
+        std::signal(SIGTERM, signal_handler);
+
+        while (!killed) {
+            std::this_thread::sleep_for(milliseconds(100));
+        }
+
+        spdlog::info("Ending harness...");
+
+        telemetry.unsubscribe_status_text(telemetry_status_text_listener);
 
     } else if (validate_cmd->parsed()) {
         spdlog::info("validate: specs={}", specs_dir);
