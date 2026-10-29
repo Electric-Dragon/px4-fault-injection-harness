@@ -1,6 +1,7 @@
 add_executable(harness_tests
     test_smoke.cpp
     test_connection_url.cpp
+    test_vehicle_class.cpp
 )
 
 target_link_libraries(harness_tests PRIVATE

@@ -1,10 +1,16 @@
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 #include "harness/vehicle/connection_url.hpp"
 #include <mavsdk/mavsdk.h>
+#include <mavsdk/plugins/info/info.h>
+#include <mavsdk/plugins/telemetry/telemetry.h>
+#include <chrono>
+#include <thread>
 
-#include "spdlog/fmt/bundled/ostream.h"
+#include "harness/vehicle/vehicle_class.hpp"
 
+using namespace std::chrono;
 int main(int argc, char** argv) {
     CLI::App app{"PX4 fault-injection test harness"};
 
@@ -12,14 +18,14 @@ int main(int argc, char** argv) {
     std::string out_dir = "reports/";
     std::string url = "udpin://0.0.0.0:14556";
     std::string filter;
-    double timeout = 10.0;
+    double timeout = 30.0;
 
     auto* run_cmd = app.add_subcommand("run", "Run fault-injection test specs");
     run_cmd->add_option("--url", url, "MAVLink connection URL");
     run_cmd->add_option("--specs", specs_dir, "Directory containing test specs"); //->required();
     run_cmd->add_option("--out", out_dir, "Output directory for reports");
     run_cmd->add_option("--filter", filter, "Glob filter for spec IDs");
-    run_cmd->add_option("--timeout", timeout, "Timeout to find autopilot in seconds")->check(CLI::PositiveNumber);
+    run_cmd->add_option("--timeout", timeout, "Timeout to find autopilot and get vehicle info for initialization in seconds")->check(CLI::PositiveNumber);
 
     auto* validate_cmd = app.add_subcommand("validate", "Schema-check specs without SITL");
     validate_cmd->add_option("--specs", specs_dir, "Directory containing test specs")->required();
@@ -40,13 +46,16 @@ int main(int argc, char** argv) {
         }
 
         mavsdk::Mavsdk mavsdk{mavsdk::Mavsdk::Configuration{mavsdk::ComponentType::GroundStation}};
-        mavsdk::ConnectionResult connection_result = mavsdk.add_any_connection(url);
+        const mavsdk::ConnectionResult connection_result = mavsdk.add_any_connection(url);
         if (connection_result != mavsdk::ConnectionResult::Success) {
             spdlog::error("Connection failed for {}: {}", url,fmt::streamed(connection_result));
             return 1;
         }
 
-        auto first_autopilot = mavsdk.first_autopilot(timeout);
+        const auto timeout_start = steady_clock::now();
+        const auto timeout_deadline = timeout_start + duration<double>(timeout);
+
+        const auto first_autopilot = mavsdk.first_autopilot(timeout);
         if (!first_autopilot) {
             spdlog::error("No autopilot found on '{}' in {}s",url, timeout );
             return 1;
@@ -54,8 +63,53 @@ int main(int argc, char** argv) {
 
         const auto& system = first_autopilot.value();
 
+        const auto autopilot_type = system->autopilot_type();
+
+        if (autopilot_type != mavsdk::Autopilot::Px4) {
+            spdlog::error("Only PX4 autopilots are supported");
+            return 1;
+        }
+
         spdlog::info("System ID: {}", system->get_system_id());
 
+        const auto vehicle_type = system->vehicle_type();
+
+        spdlog::info("Vehicle type: {}",harness::to_string(vehicle_type));
+
+        const auto vehicle_class_result = harness::vehicle_class_from(vehicle_type);
+
+        if (!vehicle_class_result) {
+            spdlog::error("{}",vehicle_class_result.error());
+            return 1;
+        }
+
+        spdlog::info("Vehicle class: {}", harness::to_string(vehicle_class_result.value()));
+
+        auto info = mavsdk::Info{system};
+
+        while (info.get_version().first==mavsdk::Info::Result::InformationNotReceivedYet) {
+
+            if (steady_clock::now() >= timeout_deadline) {
+                spdlog::error("Failed to fetch system version in {}s", timeout);
+                return 1;
+            }
+
+            std::this_thread::sleep_for(milliseconds(100));
+        }
+
+        const auto [system_version_result, version] = info.get_version();
+
+        if (system_version_result != mavsdk::Info::Result::Success) {
+            spdlog::error("Failed to get system version: {}", fmt::streamed(system_version_result));
+            return 1;
+        }
+
+        spdlog::info("System version: {}.{}.{}",version.flight_sw_major, version.flight_sw_minor, version.flight_sw_patch);
+
+        auto telemetry = mavsdk::Telemetry{system};
+        auto flight_mode = telemetry.flight_mode();
+
+        spdlog::info("Flight mode: {}", fmt::streamed(flight_mode));
 
     } else if (validate_cmd->parsed()) {
         spdlog::info("validate: specs={}", specs_dir);

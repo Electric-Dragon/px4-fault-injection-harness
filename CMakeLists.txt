@@ -12,7 +12,7 @@ include(cmake/warnings.cmake)
 include(cmake/dependencies.cmake)
 include(cmake/mavsdk.cmake)
 
-add_library(harness_lib STATIC "src/vehicle/connection_url.cpp")
+add_library(harness_lib STATIC "src/vehicle/connection_url.cpp" "src/vehicle/vehicle_class.cpp")
 target_include_directories(harness_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
