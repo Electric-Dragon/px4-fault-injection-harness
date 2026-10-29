@@ -12,7 +12,9 @@ Use `sihsim_airplane` for fixed-wing. Harness side: `--url udpin://:14556`.
 - **Shallow clones need the tag.** Without it PX4 reports `v0.0.0`. The script clones the tag
   itself; a SHA pin has no tag, so record the SHA.
 - **Apple Silicon:** amd64 emulation means slow build (~40 min), runtime is fine (lockstep).
-  `--rm` means every run rebuilds.
+- **Build cache:** the checkout and build live in a named volume per ref (`px4-v1.16.1`), so
+  only the first run per ref is slow; later runs and switching quad ↔ airplane are
+  incremental. `docker volume ls` to list, `docker volume rm px4-<ref>` to force a clean build.
 - **Container-to-host MAVLink** needs explicit target IP: harness host LAN IPv4, NOT
   `host.docker.internal` (can resolve IPv6-only). The script adds a MAVLink instance aimed at
   `<host-ip>:14556` once PX4 is up. Bidirectional traffic requires publishing the

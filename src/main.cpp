@@ -1,5 +1,6 @@
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
+#include "harness/vehicle/connection_url.hpp"
 
 int main(int argc, char** argv) {
     CLI::App app{"PX4 fault-injection test harness"};
@@ -27,6 +28,12 @@ int main(int argc, char** argv) {
 
     if (run_cmd->parsed()) {
         spdlog::info("run: specs={} url={} out={}", specs_dir, url, out_dir);
+
+        auto url_validation_result = harness::validate_connection_url(url);
+        if (!url_validation_result) {
+            spdlog::error("{}", url_validation_result.error());
+            return 1;
+        }
     } else if (validate_cmd->parsed()) {
         spdlog::info("validate: specs={}", specs_dir);
     } else if (list_cmd->parsed()) {
