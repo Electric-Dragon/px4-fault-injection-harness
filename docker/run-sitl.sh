@@ -8,7 +8,7 @@ set -euo pipefail
 #
 # Env overrides:
 #   PX4_IMAGE      container image (default: px4io/px4-dev-simulation-jammy)
-#   HARNESS_PORT   host UDP port the harness listens on (default: 14556 → udpin://:14556)
+#   HARNESS_PORT   host UDP port the harness listens on (default: 14556 → udpin://0.0.0.0:14556)
 #
 # The PX4 checkout and build live in a named volume per ref (px4-<ref>), so only the first
 # run per ref clones and builds from scratch. Force a clean rebuild: docker volume rm px4-<ref>
@@ -39,7 +39,7 @@ fi
 PX4_VOLUME="px4-${PX4_REF}"
 
 echo "Starting PX4 SITL (SIH): ref=${PX4_REF} target=${SIM_TARGET} image=${PX4_IMAGE} volume=${PX4_VOLUME}"
-echo "MAVLink → ${HOST_IP}:${HARNESS_PORT}   (harness: --url udpin://:${HARNESS_PORT})"
+echo "MAVLink → ${HOST_IP}:${HARNESS_PORT}   (harness: --url udpin://0.0.0.0:${HARNESS_PORT})"
 
 docker run --rm -it \
     -e PX4_REF="${PX4_REF}" \

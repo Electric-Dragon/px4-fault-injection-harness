@@ -1,7 +1,7 @@
 # SITL Docker Environment — Known Constraints
 
 `./docker/run-sitl.sh [px4-tag-or-sha] [sih-target]` — defaults `v1.16.1`, `sihsim_quadx`.
-Use `sihsim_airplane` for fixed-wing. Harness side: `--url udpin://:14556`.
+Use `sihsim_airplane` for fixed-wing. Harness side: `--url udpin://0.0.0.0:14556`.
 
 - **Simulator is SIH** (PX4's built-in physics): no Gazebo, no Java, headless by nature.
   Verify target names on the pinned ref with `make px4_sitl list_config_targets`.
@@ -19,7 +19,7 @@ Use `sihsim_airplane` for fixed-wing. Harness side: `--url udpin://:14556`.
   `host.docker.internal` (can resolve IPv6-only). The script adds a MAVLink instance aimed at
   `<host-ip>:14556` once PX4 is up.
 - **Do not publish the harness port** (`-p 14556:14556/udp`). Docker Desktop then binds
-  `*:14556` on the Mac itself, so the harness's `udpin://:14556` fails with "Address already
+  `*:14556` on the Mac itself, so the harness's `udpin://0.0.0.0:14556` fails with "Address already
   in use" (seen in `lsof -nP -iUDP:14556` as `com.docker.backend`). PX4 initiates the flow,
   and replies return through Docker's NAT on the same flow, so no published port is needed.
 - **PX4 auto-disarms** if armed idle. Arm+takeoff must be one sequence.
