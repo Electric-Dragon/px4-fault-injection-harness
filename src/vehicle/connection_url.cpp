@@ -36,12 +36,25 @@ harness::Result<std::string> harness::validate_connection_url(std::string_view u
         return Result<std::string>::err("Incorrect protocol name in '" + std::string(url) + "'. Only udpin, udpout, tcpin, tcpout and serial are supported.");
     }
 
-    auto index = url.rfind(':');
-    if (index == std::string_view::npos) {
+    const auto port_start = url.rfind(':');
+    if (port_start == std::string_view::npos) {
         return Result<std::string>::err("Malformed protocol: '" + std::string(url) + "'");
     }
 
-    auto port_str = url.substr(index+1);
+    const auto host_start = url.find("://") + 3;
+
+    if (port_start < host_start) {
+        return Result<std::string>::err("Missing port/ baud rate: '" + std::string(url) + "'");
+    }
+
+    const auto host_length = port_start - host_start;
+    const auto host = url.substr(host_start, host_length);
+
+    if (host.empty()) {
+        return Result<std::string>::err("Missing host in: '" + std::string(url) + "'. Use 0.0.0.0 to listen on all interfaces");
+    }
+
+    auto port_str = url.substr(port_start+1);
     if (port_str.empty()) {
         return Result<std::string>::err("Missing port/ baud rate: '" + std::string(url) + "'");
     }

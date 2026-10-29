@@ -31,11 +31,14 @@ TEST_CASE("malformed connection ports are rejected", "[connection_url]") {
     auto url = GENERATE(
         "udpin://",
         "udpin://:",
+        "udpin://:14540",
         "udpin://:abc",
         "udpin://:14a",
         "udpin://:0",
         "udpin://:65536",
-        "serial:///dev/cu.usbmodem1"
+        "tcpin://:5760",
+        "serial:///dev/cu.usbmodem1",
+        "serial://:57600"
     );
     CAPTURE(url);
 
@@ -45,9 +48,9 @@ TEST_CASE("malformed connection ports are rejected", "[connection_url]") {
 
 TEST_CASE("valid schemes are accepted unchanged", "[connection_url]") {
     auto url = GENERATE(
-        "udpin://:14540",
+        "udpin://0.0.0.0:14540",
         "udpout://192.168.1.5:14550",
-        "tcpin://:5760",
+        "tcpin://0.0.0.0:5760",
         "tcpout://127.0.0.1:5760",
         "serial:///dev/cu.usbmodem1:57600"
     );
