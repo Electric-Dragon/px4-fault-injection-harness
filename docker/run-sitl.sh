@@ -48,7 +48,6 @@ docker run --rm -it \
     -e SIM_TARGET="${SIM_TARGET}" \
     -e HOST_IP="${HOST_IP}" \
     -e HARNESS_PORT="${HARNESS_PORT}" \
-    -p "${HARNESS_PORT}:${HARNESS_PORT}/udp" \
     -v "${PX4_VOLUME}:/src/PX4" \
     "${PX4_IMAGE}" \
     bash -c '
